@@ -36,20 +36,22 @@ if (isset($i['mode'][2]) && $i['mode'][2] == 'sign') {
 	$content2['cron_limit'] = array('td1'=>'<b>单表单次签到执行数量</b><br/>0为一次性全部签到。此功能非常重要，设置为0会导致每次都扫描贴吧表，效率极低，请按需修改','type'=>'number','text'=>'注意这是控制单个表的，当你有N个表时，单次签到数量为 N × 分表数','extra'=>'min="0" step="1"');
 	$content2['bduss_num'] = array('td1'=>'<b>最大允许用户绑定账号数</b><br/>0为无限，-1为禁止绑定，对管理员无效','type'=>'number','text'=>'','extra'=>'min="-1" step="1"');
 	$content2['tb_max'] = array('td1'=>'<b>最大关注贴吧数量</b><br/>0为不限,对管理员无效','type'=>'number','text'=>'','extra'=>'min="0" step="1"');
+	$bsphtml = '<tr><td><b>禁止重复添加同一百度账号</b><br/>禁止添加用户名一样的百度账号<br/>对管理员无效</td><td>
+	            <label><input type="radio" name="same_pid" value="0" '.(option::get('same_pid') == '0' ? 'checked' : '').'> 不禁止(可以重复添加)</label><br/>
+	            <label><input type="radio" name="same_pid" value="1" '.(option::get('same_pid') == '1' ? 'checked' : '').'> 仅禁止同一云签到账号重复添加</label><br/>
+	            <label><input type="radio" name="same_pid" value="2" '.(option::get('same_pid') == '2' ? 'checked' : '').'> 全局禁止(一旦有用户添加则其他用户不能添加)</label>
+	        </td>
+	    </tr>';
+	$content2['same_pid'] = array('html'=>$bsphtml,'type'=>'else');
 	$content2['retry_max'] = array('td1'=>'<b>签到失败重试次数</b><br/>0为无限，-1为不重试','type'=>'number','text'=>'','extra'=>'min="-1" step="1"');
 	$content2['sign_hour'] = array('td1'=>'<b>签到开始时间</b><br/>24小时制。例如设为-1，则从0点开始签到','type'=>'number','text'=>'','extra'=>'min="-1" step="1" max="24"');
 	$content2['sign_sleep'] = array('td1'=>'<b>签到间隔时间</b><br/>单位为毫秒，0为不暂停','type'=>'number','text'=>'适量的间隔时间可以防止签到过快而失败的问题，但会导致签到效率降低','extra'=>'min="0" step="1"');
 	$content2['enable_addtieba'] = array('td1'=>'<b>允许手动添加贴吧</b>','type'=>'checkbox','text'=>'开启后用户可以手动添加贴吧，添加时必须≤最大关注贴吧数量','extra'=>'');
 	$sign_mode = unserialize(option::get('sign_mode'));
-	if(!empty($sign_mode)){
-		$sm1 = in_array('1',$sign_mode) ? ' checked' : '' ;
-		$sm2 = in_array('2',$sign_mode) ? ' checked' : '' ;
-		$sm3 = in_array('3',$sign_mode) ? ' checked' : '' ;
-	} else { $sm1=$sm2=$sm3=''; }
 	$smhtml = '<tr><td><b>签到模式设置</b><br/>选择多个将在某个模式失败后使用下一种<br/>启用的签到模式越多，消耗的流量和时间越多</td><td>
-	            <input type="checkbox" name="sign_mode[]" value="1"'.$sm1.'> 模拟手机客户端签到<br/>
-	            <input type="checkbox" name="sign_mode[]" value="3"'.$sm3.'> 手机网页签到<br/>
-	            <input type="checkbox" name="sign_mode[]" value="2"'.$sm2.'> 网页签到
+	            <label><input type="checkbox" name="sign_mode[]" value="1" '.(in_array('1',$sign_mode) ? 'checked' : '').'> 模拟手机客户端签到</label><br/>
+	            <label><input type="checkbox" name="sign_mode[]" value="3" '.(in_array('2',$sign_mode) ? 'checked' : '').'> 手机网页签到</label><br/>
+	            <label><input type="checkbox" name="sign_mode[]" value="2" '.(in_array('3',$sign_mode) ? 'checked' : '').'> 网页签到</label>
 	        </td>
 	    </tr>';
 	$content2['sign_mode'] = array('html'=>$smhtml,'type'=>'else');
@@ -189,9 +191,7 @@ if (isset($i['mode'][2]) && $i['mode'][2] == 'sign') {
 
 					<div class="input-group">
 					  <span class="input-group-addon">SMTP密码</span>
-					  <div onclick="$(this.parentNode).append('<input type=\'password\' class=\'form-control\' name=\'mail_smtppw\' id=\'smtp_pwd\' placeholder=\'输入新的SMTP密码，刷新可取消修改\'>');$(this).remove();">
-					 	 <input type="text" id="smtp_pwd" class="form-control" disabled value="保持原密码 ( 点击可以修改 )">
-					  </div>
+					 	 <input type="text" onclick="$(this).attr('value','').attr('type','password').attr('name','mail_smtppw').removeAttr('readonly');" class="form-control" readonly value="保持原密码 ( 点击可以修改 )">
 					</div><br/>
 				</div>
 			</div>
@@ -200,27 +200,6 @@ if (isset($i['mode'][2]) && $i['mode'][2] == 'sign') {
 	<?php
 	$mailhtml = ob_get_clean();
 	$content1['mail'] = array('html'=>$mailhtml,'type'=>'else');
-	ob_start();
-	?>
-		<tr><td><b>StusGame 产品中心 账号设置</b>
-		<br/><br/><input type="button" class="btn btn-default" onclick="location = '<?php echo SYSTEM_URL; ?>setting.php?mod=admin:testbbs'" value="测试登录">
-		<br/><br/>测试前请先保存设置
-		</td><td><br/>
-			<div class="input-group">
-			  <span class="input-group-addon">账号</span>
-			  <input type="text" name="bbs_us" class="form-control"  value="<?php echo option::get('bbs_us') ?>">
-			</div><br/>
-
-			<div class="input-group">
-				<span class="input-group-addon">密码</span>
-				<div onclick="$(this.parentNode).append('<input type=\'password\' class=\'form-control\' name=\'bbs_pw\' id=\'bbs_pw\' placeholder=\'输入新的产品中心密码，刷新可取消修改\'>');$(this).remove();">
-					<input type="text" id="smtp_pwd" class="form-control" disabled value="保持原密码 ( 点击可以修改 )">
-				</div>
-			</div><br/>
-		</td></tr>
-	<?php
-	$bbshtml = ob_get_clean();
-	$content1['bbs'] = array('html'=>$bbshtml,'type'=>'else');
 	/*end 超长内容*/
 	echo former::create($set1,$content1);
 }

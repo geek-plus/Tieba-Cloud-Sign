@@ -112,6 +112,7 @@ switch (SYSTEM_PAGE) {
 			@option::set('fb',$sou['fb']);
             @option::set('sign_sleep',$sou['sign_sleep']);
             @option::set('sign_scan',$sou['sign_scan']);
+			@option::set('same_pid', $sou['same_pid']);
 			if (empty($sou['fb_tables'])) {
 				@option::set('fb_tables',NULL);
 			} else {
@@ -490,9 +491,10 @@ switch (SYSTEM_PAGE) {
 				$count = $m->once_fetch_array("SELECT COUNT(*) AS `c` FROM `".DB_NAME."`.`".DB_PREFIX."baiduid` WHERE `".DB_PREFIX."baiduid`.`uid` = ".UID);
 				if (($count['c'] + 1) > option::get('bduss_num')) msg('您当前绑定的账号数已达到管理员设置的上限<br/><br/>您当前已绑定 '.$count['c'].' 个账号，最多只能绑定 '.option::get('bduss_num').' 个账号'); 
 			}
-			// 去除双引号和bduss
+			// 去除双引号和bduss=
 			$bduss = str_replace('"', '', $_GET['bduss']);
 			$bduss = str_ireplace('BDUSS=', '', $bduss);
+			$bduss = str_replace(' ', '', $bduss);
 			$bduss = sqladds($bduss);
 			$baidu_name = sqladds(getBaiduId($bduss));
 			if (empty($baidu_name)) {
@@ -508,17 +510,19 @@ switch (SYSTEM_PAGE) {
 			$m->query("DELETE FROM `".DB_NAME."`.`".DB_PREFIX."baiduid` WHERE `".DB_PREFIX."baiduid`.`uid` = ".UID." AND `".DB_PREFIX."baiduid`.`id` = " . $del);	
 			$m->query('DELETE FROM `'.DB_NAME.'`.`'.DB_PREFIX.$x['t'].'` WHERE `'.DB_PREFIX.$x['t'].'`.`uid` = '.UID.' AND `'.DB_PREFIX.$x['t'].'`.`pid` = '.$del);
 		}
+		/*
 		elseif (!empty($_GET['reget'])){
 			$reget = (int) $_GET['reget'];
 			$x=$m->once_fetch_array("SELECT * FROM  `".DB_NAME."`.`".DB_PREFIX."baiduid` WHERE `uid` = ".UID." AND `id` = ".$reget." LIMIT 1");
 			if(!empty($x)){
 				$baidu_name = sqladds(getBaiduId($x['bduss']));
 				if(empty($baidu_name)){
-					$baidu_name = '已失效';
+					$baidu_name = '[E]';
 				}
 				$m->query("UPDATE `".DB_NAME."`.`".DB_PREFIX."baiduid` SET `name` = '$baidu_name' WHERE `id` = '$reget'");
 			}
 		}
+		*/
 		doAction('baiduid_set');
 		Redirect("index.php?mod=baiduid");
 		break;
